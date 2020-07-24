@@ -101,6 +101,9 @@ void GazeboRosP3D::Load(gazebo::physics::ModelPtr model, sdf::ElementPtr sdf)
   // Configure the plugin from the SDF file
   impl_->ros_node_ = gazebo_ros::Node::Get(sdf);
 
+  // Get QoS profiles
+  const gazebo_ros::QoS & qos = impl_->ros_node_->get_qos();
+
   if (!sdf->HasElement("update_rate")) {
     RCLCPP_DEBUG(
       impl_->ros_node_->get_logger(), "p3d plugin missing <update_rate>, defaults to 0.0"
@@ -126,7 +129,7 @@ void GazeboRosP3D::Load(gazebo::physics::ModelPtr model, sdf::ElementPtr sdf)
   }
 
   impl_->pub_ = impl_->ros_node_->create_publisher<nav_msgs::msg::Odometry>(
-    impl_->topic_name_, rclcpp::SensorDataQoS());
+    impl_->topic_name_, qos.get_publisher_qos(impl_->topic_name_, rclcpp::SensorDataQoS()));
 
   impl_->tf_pub_ = impl_->ros_node_->create_publisher<tf2_msgs::msg::TFMessage>("/tf",
     tf2_ros::DynamicBroadcasterQoS());

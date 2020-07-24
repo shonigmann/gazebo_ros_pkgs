@@ -38,7 +38,7 @@ Node::SharedPtr Node::Get(sdf::ElementPtr sdf)
 {
   // Initialize arguments
   std::string name = "";
-  std::string ns = "";
+  std::string ns = "/";
   std::vector<std::string> arguments;
   std::vector<rclcpp::Parameter> parameter_overrides;
 
@@ -56,6 +56,10 @@ Node::SharedPtr Node::Get(sdf::ElementPtr sdf)
   // Set namespace if tag is present
   if (sdf->HasElement("namespace")) {
     ns = sdf->GetElement("namespace")->Get<std::string>();
+    // prevent exception: namespace must be absolute, it must lead with a '/'
+    if (ns.empty() || ns[0] != '/') {
+      ns = '/' + ns;
+    }
   }
 
   // Get list of arguments from SDF
@@ -99,7 +103,12 @@ Node::SharedPtr Node::Get(sdf::ElementPtr sdf)
   node_options.parameter_overrides(parameter_overrides);
 
   // Create node with parsed arguments
-  return CreateWithArgs(name, ns, node_options);
+  std::shared_ptr<gazebo_ros::Node> node = CreateWithArgs(name, ns, node_options);
+
+  // Parse the qos tag
+  node->qos_ = gazebo_ros::QoS(sdf, name, ns, node_options);
+
+  return node;
 }
 
 Node::SharedPtr Node::Get()
